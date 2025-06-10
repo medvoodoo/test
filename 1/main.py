@@ -61,10 +61,9 @@ async def my_timetable_handler(request, *, user_id=None):
 
     async with request.app['db'].acquire() as conn:
         rows = await conn.fetch(
-            """ SELECT tt.id, u.surname || ' ' || u.name AS teacher, g.name AS group_name, st.name AS time_slot, tt.data, tt.room, tt.discipline_name FROM TIMETABLES tt JOIN USERS u ON tt.users_id=u.id JOIN GROUPS g ON tt.groups_id=g.id JOIN START_TIMES st ON tt.start_times_id=st.id WHERE tt.data=$1 AND tt.users_id=$2 ORDER BY st.number ASC """,
+            """ SELECT tt.id, u.surname || ' ' || u.name AS teacher, g.name AS group_name, st.name AS time_slot, tt.data, tt.room, tt.discipline_name FROM TIMETABLES tt JOIN USERS u ON tt.users_id=u.id JOIN GROUPS g ON tt.groups_id=g.id JOIN START_TIMES st ON tt.start_times_id=st.id WHERE tt.data=$1 AND tt.users_id=$2 ORDER BY st.name ASC """,
             requested_date, user_id
         )
-        print("good")
     result = []
     for row in rows:
         result.append({
