@@ -10,15 +10,21 @@ from dotenv import load_dotenv
 # Загружаем переменные среды из .env-файла
 load_dotenv()
 
-SECRET_KEY = os.getenv('SECRET_KEY') or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ"
+SECRET_KEY = os.getenv(
+    'SECRET_KEY') or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ"
 ALGORITHM = 'HS256'
-DB_URL = os.getenv('DATABASE_URL') or 'postgresql://medved:pass@localhost/test_time'
+DB_URL = os.getenv(
+    'DATABASE_URL') or 'postgresql://medved:pass@localhost/test_time'
 
 # Создаем пул соединений к БД
+
+
 async def init_db(app):
     app['db'] = await asyncpg.create_pool(DB_URL)
 
 # Закрываем соединение с БД
+
+
 async def close_db(app):
     await app['db'].close()
 
@@ -31,7 +37,8 @@ async def auth_middleware(request, handler):
         raise web.HTTPUnauthorized(text='Missing authorization header.')
 
     try:
-        decoded_token = jwt.decode(token.split()[1], SECRET_KEY, algorithms=ALGORITHM)
+        decoded_token = jwt.decode(
+            token.split()[1], SECRET_KEY, algorithms=ALGORITHM)
         user_id = int(decoded_token.get('user_id'))
         # Проверяем наличие токена в таблице SESSIONS
         async with request.app['db'].acquire() as conn:
@@ -48,20 +55,27 @@ async def auth_middleware(request, handler):
         print(e)
         raise web.HTTPUnauthorized(text=str(e))
 
-# Обработчик GET-запросов для получения расписания уроков
+
 async def my_timetable_handler(request, *, user_id=None):
+'''Получение уроков по дате для пользователя'''
     date_str = request.query.get('date')
     if not date_str:
         raise web.HTTPBadRequest(text="Date parameter is required.")
 
     try:
-        requested_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        requested_date = datetime.datetime.strptime(
+            date_str, '%Y-%m-%d').date()
     except ValueError:
         raise web.HTTPBadRequest(text="Invalid date format. Use YYYY-MM-DD.")
 
     async with request.app['db'].acquire() as conn:
         rows = await conn.fetch(
-            """ SELECT tt.id, u.surname || ' ' || u.name AS teacher, g.name AS group_name, st.name AS time_slot, tt.data, tt.room, tt.discipline_name FROM TIMETABLES tt JOIN USERS u ON tt.users_id=u.id JOIN GROUPS g ON tt.groups_id=g.id JOIN START_TIMES st ON tt.start_times_id=st.id WHERE tt.data=$1 AND tt.users_id=$2 ORDER BY st.name ASC """,
+            """ SELECT tt.id, u.surname || ' ' || u.name AS teacher, g.name AS group_name, st.name AS time_slot, tt.data, tt.room, tt.discipline_name
+                FROM TIMETABLES tt
+                JOIN USERS u ON tt.users_id=u.id
+                JOIN GROUPS g ON tt.groups_id=g.id
+                JOIN START_TIMES st ON tt.start_times_id=st.id
+                WHERE tt.data=$1 AND tt.users_id=$2 ORDER BY st.name ASC """,
             requested_date, user_id
         )
     result = []
@@ -80,7 +94,8 @@ async def my_timetable_handler(request, *, user_id=None):
 
 # Основной запуск приложения
 if __name__ == '__main__':
-    print(jwt.encode({"user_id": '2', "session_id": "dfdc66fa-9a36-4247-a130-67f7b1988cd7"}, SECRET_KEY, algorithm=ALGORITHM))
+    print(jwt.encode({"user_id": '2', "session_id": "dfdc66fa-9a36-4247-a130-67f7b1988cd7"},
+          SECRET_KEY, algorithm=ALGORITHM))
     app = web.Application(middlewares=[auth_middleware])
     app.router.add_get('/timetables/my', my_timetable_handler)
     app.on_startup.append(init_db)
