@@ -16,13 +16,9 @@ ALGORITHM = 'HS256'
 DB_URL = os.getenv(
     'DATABASE_URL') or 'postgresql://medved:pass@localhost/test_time'
 
-# Создаем пул соединений к БД
-
 
 async def init_db(app):
     app['db'] = await asyncpg.create_pool(DB_URL)
-
-# Закрываем соединение с БД
 
 
 async def close_db(app):
@@ -57,7 +53,7 @@ async def auth_middleware(request, handler):
 
 
 async def my_timetable_handler(request, *, user_id=None):
-'''Получение уроков по дате для пользователя'''
+    '''Получение уроков по дате для пользователя'''
     date_str = request.query.get('date')
     if not date_str:
         raise web.HTTPBadRequest(text="Date parameter is required.")
