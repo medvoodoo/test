@@ -1,0 +1,65 @@
+CREATE TABLE IF NOT EXISTS USERS (
+    id SERIAL PRIMARY KEY,
+    surname TEXT NOT NULL,
+    name TEXT NOT NULL,
+    patronymic TEXT NOT NULL,
+    create_time TIMESTAMP DEFAULT NOW(),
+    change_time TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS SESSIONS (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Токен сессии генерируется автоматически
+    users_id INT REFERENCES USERS(id),
+    logining_is BOOLEAN DEFAULT TRUE,
+    create_time TIMESTAMP DEFAULT NOW(),
+    change_time TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS GROUPS (
+    id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    create_time TIMESTAMP DEFAULT NOW(),
+    change_time TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS START_TIMES (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    version INTEGER NOT NULL,
+    number INTEGER NOT NULL,
+    create_time TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS TIMETABLES (
+    id SERIAL PRIMARY KEY,
+    users_id INT REFERENCES USERS(id),          -- Преподаватель
+    groups_id INT REFERENCES GROUPS(id),       -- Группа
+    start_times_id INT REFERENCES START_TIMES(id),   -- Время начала урока
+    data DATE NOT NULL,                        -- Дата проведения урока
+    lesson_name TEXT NOT NULL,                 -- Название урока
+    discipline_name TEXT NOT NULL,             -- Дисциплина
+    room TEXT NOT NULL,                        -- Аудитория
+    create_time TIMESTAMP DEFAULT NOW(),
+    change_time TIMESTAMP DEFAULT NOW()
+);
+
+INSERT INTO USERS (surname, name, patronymic) VALUES
+('Иванов', 'Иван', 'Иванович'),
+('Петров', 'Петр', 'Петрович');
+
+INSERT INTO SESSIONS (users_id) VALUES
+((SELECT id FROM USERS LIMIT 1)),
+((SELECT id FROM USERS OFFSET 1 LIMIT 1));
+
+INSERT INTO GROUPS (name) VALUES
+('Группа 1'),
+('Группа 2');
+
+INSERT INTO START_TIMES (name, version, number) VALUES
+('Начало первой пары', 1, 1),
+('Начало второй пары', 1, 2);
+
+INSERT INTO TIMETABLES (users_id, groups_id, start_times_id, data, lesson_name, discipline_name, room) VALUES
+((SELECT id FROM USERS LIMIT 1), (SELECT id FROM GROUPS LIMIT 1), (SELECT id FROM START_TIMES LIMIT 1), '2023-10-10', 'Информатика', 'Программирование', 'К-101'),
+((SELECT id FROM USERS LIMIT 1), (SELECT id FROM GROUPS OFFSET 1 LIMIT 1), (SELECT id FROM START_TIMES OFFSET 1 LIMIT 1), '2023-10-10', 'Английский язык', 'Иностранные языки', 'К-102');
+

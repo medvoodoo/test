@@ -1,0 +1,4 @@
+aiohttp
+pyjwt
+asyncpg
+dotenv
